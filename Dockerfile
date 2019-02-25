@@ -8,34 +8,30 @@
 FROM jlesage/baseimage-gui:alpine-3.8-v3.5.1
 
 # Define software versions.
-ARG FILEBOT_VERSION=4.8.2
+ARG FILEBOT_VERSION=4.8.5
 ARG OPENJFX_VERSION=8.151.12-r0
+ARG CHROMAPRINT_VERSION=1.4.3
 
 # Define software download URLs.
 ARG FILEBOT_URL=https://get.filebot.net/filebot/FileBot_${FILEBOT_VERSION}/FileBot_${FILEBOT_VERSION}-portable.tar.xz
 ARG OPENJFX_URL=https://github.com/sgerrand/alpine-pkg-java-openjfx/releases/download/${OPENJFX_VERSION}/java-openjfx-${OPENJFX_VERSION}.apk
+ARG CHROMAPRINT_URL=https://github.com/acoustid/chromaprint/archive/v${CHROMAPRINT_VERSION}.tar.gz
 
 # Define working directory.
 WORKDIR /tmp
 
-# Install FileBot
+# Install FileBot.
 RUN \
     add-pkg --virtual build-dependencies curl && \
     mkdir filebot && \
     # Download sources.
     curl -# -L ${FILEBOT_URL} | tar xJ -C filebot && \
-    # Temporary hack until the official 4.8.4 release is available: do not use
-    # the packaged jar, but the one containing the deadlock fix.
-    rm filebot/jar/filebot.jar && \
     # Install.
     mkdir /opt/filebot && \
     cp -Rv filebot/jar /opt/filebot/ && \
     # Cleanup.
     del-pkg build-dependencies && \
     rm -rf /tmp/* /tmp/.[!.]*
-
-# Temporary hack until the official 4.8.4 release is available.
-COPY filebot-4.8.4-r5846.jar /opt/filebot/jar/filebot.jar
 
 # Install dependencies.
 RUN \
@@ -49,14 +45,46 @@ RUN \
         java-jna \
         libmediainfo \
         && \
-    # AcousItD (fpcalc)
-    add-pkg chromaprint --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing && \
     # YAD
     add-pkg yad && \
     # Cleanup.
     del-pkg build-dependencies && \
     rm -rf /tmp/* /tmp/.[!.]*
-        
+
+# Build and install chromaprint (fpcalc) for AcousItD.
+RUN \
+    add-pkg --virtual build-dependencies \
+        build-base \
+        cmake \
+        curl \
+        ffmpeg-dev \
+        fftw-dev \
+        && \
+    # Download.
+    mkdir chromaprint && \
+    curl -# -L ${CHROMAPRINT_URL} | tar xz --strip 1 -C chromaprint && \
+    # Compile.
+    cd chromaprint && \
+    mkdir build && cd build && \
+    cmake \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_TOOLS=ON \
+        .. && \
+    make -j$(nproc) && \
+    make install && \
+    cd .. && \
+    cd .. && \
+    # Cleanup.
+    del-pkg build-dependencies && \
+    rm /usr/lib/pkgconfig/libchromaprint.pc \
+       /usr/include/chromaprint.h \
+       && \
+    rmdir /usr/include \
+          /usr/lib/pkgconfig \
+          && \
+    rm -rf /tmp/* /tmp/.[!.]*
+
 # Adjust the openbox config.
 RUN \
     # Maximize only the main window.
