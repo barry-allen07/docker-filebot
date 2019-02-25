@@ -13,7 +13,7 @@ ARG OPENJFX_VERSION=8.151.12-r0
 ARG CHROMAPRINT_VERSION=1.4.3
 
 # Define software download URLs.
-ARG FILEBOT_URL=https://get.filebot.net/filebot/FileBot_${FILEBOT_VERSION}/FileBot_${FILEBOT_VERSION}-portable.tar.xz
+ARG FILEBOT_URL=https://github.com/barry-allen07/FB-Mod/releases/download/${FILEBOT_VERSION}/FileBot_${FILEBOT_VERSION}-Linux-Portable.tar.xz
 ARG OPENJFX_URL=https://github.com/sgerrand/alpine-pkg-java-openjfx/releases/download/${OPENJFX_VERSION}/java-openjfx-${OPENJFX_VERSION}.apk
 ARG CHROMAPRINT_URL=https://github.com/acoustid/chromaprint/archive/v${CHROMAPRINT_VERSION}.tar.gz
 
